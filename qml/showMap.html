@@ -1,0 +1,167 @@
+<!-- Soucrce: http://www.w3schools.com/googleAPI/tryit.asp?filename=tryhtml_ref_map -->
+<html>
+<head>
+<script
+    src = "http://maps.googleapis.com/maps/api/js?key=AIzaSyDY0kkJiTPVd2U7aTOAwhc9ySH6oHxOIYM&sensor=false">
+</script>
+</head>
+
+<body>
+
+
+<div id="googleMap" style="width:800px;height:1000px;"></div>
+<table border="2" width="800">
+    <tr>
+        <td>Bus Stops</td>
+        <td>Name</td>
+        <td>Time</td>
+        <td>method</td>
+    </tr>
+    <tr bgcolor="green">
+        <td id="srcTmp"/>
+        <td id="srcName"/>
+        <td id="srcTime"/>
+        <td>walk</td>
+    </tr>
+    <tr/>
+    <tr/>
+    <tr/>
+    <tr bgcolor="pink">
+        <td id="dstTmp"/>
+        <td id="dstName"/>
+        <td id="dstTime"/>
+        <td>walk</td>
+    </tr>
+</table>
+<table id="routeTable" width="800"/>
+
+<script type="text/javascript">
+
+
+navigator.qt.postMessage('this is a js call');
+
+var srcLoc = new Array(4);
+var dstLoc = new Array(4);
+var lineNo;
+var stopsLats;
+var stopsLngs;
+var stopsNo;
+
+
+function fillTable(){
+    document.getElementById("srcTmp").innerHTML = "From:"
+    document.getElementById("srcName").innerHTML = srcLoc[2]
+    document.getElementById("srcTime").innerHTML = srcLoc[3]
+    document.getElementById("dstTmp").innerHTML = "To:"
+    document.getElementById("dstName").innerHTML = dstLoc[2]
+    document.getElementById("dstTime").innerHTML = dstLoc[3]
+
+
+    var tbl     = document.getElementById("routeTable");
+    var tblBody = document.createElement("tbody");
+
+    for (var jjj = 0; jjj < stopsNo; jjj++) {
+        var row = document.createElement("tr");
+
+        var cell1 = document.createElement("td");
+        var cell1Text = document.createTextNode("Stop : " + (jjj + 1));
+        var cell2 = document.createElement("td");
+        var cell2Text = document.createTextNode(stopsName[jjj]);
+        var cell3 = document.createElement("td");
+        var cell3Text = document.createTextNode(stopsTime[jjj]);
+        var cell4 = document.createElement("td");
+        var cell4Text = document.createTextNode("Bus Line :" + lineNo);
+
+        cell1.appendChild(cell1Text);
+        cell2.appendChild(cell2Text);
+        cell3.appendChild(cell3Text);
+        cell4.appendChild(cell4Text);
+        row.appendChild(cell1);
+        row.appendChild(cell2);
+        row.appendChild(cell3);
+        row.appendChild(cell4);
+
+        tblBody.appendChild(row);
+    }
+    tbl.appendChild(tblBody);
+    tbl.setAttribute("border", "2");
+
+
+}
+
+function initialize()
+{
+    var lat = (parseFloat(srcLoc[0]) + parseFloat(dstLoc[0]))/2;
+    var lng = (parseFloat(srcLoc[1]) + parseFloat(dstLoc[1]))/2;
+
+
+    var mapOpt = { center:new google.maps.LatLng(lat,lng), zoom:12, mapTypeId:google.maps.MapTypeId.ROADMAP };
+    var myMap=new google.maps.Map(document.getElementById("googleMap"),mapOpt);
+
+    var srcMarker = createMarker(srcLoc[0], srcLoc[1], myMap, "source : " + srcLoc[2],
+                    'http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+    var dstMarker = createMarker(dstLoc[0], dstLoc[1], myMap,"Destination : " + dstLoc[2],
+                    'http://maps.google.com/mapfiles/ms/icons/pink-dot.png');
+    for (var ii = 0; ii < stopsNo; ii++) {
+        var busMarker = createMarker(stopsLats[ii], stopsLngs[ii], myMap, "Bus Stop at: " + stopsName[ii],
+                    'http://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=bus|DDDDDD');
+    }
+
+}
+
+function createMarker(lat, lng, m, t, iconAddr) {
+    var marker = new google.maps.Marker({
+        position: new google.maps.LatLng(lat, lng),
+        map: m,
+        icon: iconAddr,
+        title: t
+    });
+    var infowindow = new google.maps.InfoWindow({ content: marker.title });
+    google.maps.event.addListener(marker, 'click', function() { infowindow.open(m, marker); });
+
+    return marker;
+}
+
+
+function jsCall(paramsReceived){
+    var params = paramsReceived.split(";")
+    srcLoc[0] = parseFloat(params[1]);
+    srcLoc[1] = parseFloat(params[0]);
+    srcLoc[2] = params[2];
+    srcLoc[3] = params[3];
+
+    dstLoc[0] = parseFloat(params[5]);
+    dstLoc[1] = parseFloat(params[4]);
+    dstLoc[2] = params[6];
+    dstLoc[3] = params[7];
+
+    lineNo = parseInt(params[8]);
+    stopsNo = parseInt(params[9]);
+
+    stopsLngs = new Array(stopsNo);
+    stopsLats = new Array(stopsNo);
+    stopsName = new Array(stopsNo);
+    stopsTime = new Array(stopsNo);
+
+    for (var ii = 0; ii < stopsNo; ii++) {
+        stopsLngs[ii] = parseFloat(params[4*ii+10]);
+        stopsLats[ii] = parseFloat(params[4*ii+11]);
+        stopsName[ii] = params[4*ii+12];
+        stopsTime[ii] = params[4*ii+13];
+    }
+
+
+    fillTable();
+
+    initialize();
+
+}
+
+navigator.qt.onmessage = function(ev) {  jsCall(ev.data); }
+
+google.maps.event.addDomListener(window, 'load', initialize);
+</script>
+
+
+</body>
+</html>
